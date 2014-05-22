@@ -57,7 +57,7 @@ _Why?_
 
 The reason for using this method is that it allows us much more control in how we find the object as will be shown later.
 
-##An excursion into recursion - A brief note on how 'getme' handles 'getters' in paths (and methods generally)
+###An excursion into recursion - A brief note on how 'getme' handles 'getters' in paths (and methods generally)
 
 When 'getme' encounters a method in a path it will, by default, call that method recursively until it is no longer
 returned a function. The exception to this is where the last value listed is itself a method; in this instance the
@@ -76,20 +76,20 @@ If you use either of the dot syntax string varieties, don't add required argumen
 that requires arguments then an error could be thrown; 'getme' is not responsible for handling any of these errors so it
 doesn't.
 
-#'getme' API
+##'getme' API
 ---
 
 The below methods are only available when using the 'chained' version.
 
-##val
+###val
 __Usage__:
 
-    val(String property [..rest])
+    val(String property)
 
 __Description__:
 
 Uses the exact value without performing any recursion on methods (properties are returned as normal). This could be used
-to get static methods on namespaced classes for example.
+to get static methods on name-spaced classes for example.
 
 __Parameters__:
 
@@ -118,10 +118,10 @@ __Example__:
     getme(startObj).val('MyClass')('constant')(); // returns 'iAmConstantAndUnchanging'
 
 
-##run
+###run
 __Usage__:
 
-    run(String property [..rest])
+    run(String property [, ...rest])
 
 __Description__:
 
@@ -166,10 +166,10 @@ then you are correct; but if the method doesn't exist then you will get an error
     getme(startObj)('aChildsMethod')('noneExistantMethod')()(); // throws error
 
 
-##rec
+###rec
 __Usage__:
 
-    rec(String property [..rest])
+    rec(String property [, ...rest])
 
 __Description__:
 
