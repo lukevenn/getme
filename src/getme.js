@@ -32,8 +32,8 @@
         /**
          * @name argumentsToArray
          * @description Converts and arguments object into an array - removing any leading values if required
-         * @param args An arguments object
-         * @param fromIndex Index to convert from
+         * @param {Object} args An arguments object
+         * @param {Number} fromIndex Index to convert from
          * @returns {Array}
          */
         function argumentsToArray(args, fromIndex) {
@@ -43,7 +43,7 @@
         /**
          * @name recurseValue
          * @description Recursively calls methods until it is not return a method
-         * @param val The value to try and recurse
+         * @param {*} val The value to try and recurse
          * @returns {*}
          */
         function recurseValue(val) {
@@ -58,7 +58,7 @@
         /**
          * @name persist
          * @description Persists the last value if null or undefined so we can continue chaining without throwing errors
-         * @param val The property name value so that we can detect when the value should be returned
+         * @param {String} val The property name value so that we can detect when the value should be returned
          * @returns {*}
          */
         function persist(val) {
@@ -78,8 +78,8 @@
         /**
          * @name getFromString
          * @description returns a value or undefined from a dot syntax string
-         * @param startObj The object to use as the root
-         * @param path A dot syntax string to a property
+         * @param {*} startObj The object to use as the root
+         * @param {String} path A dot syntax string to a property
          * @returns {*}
          */
         getFromString = function (startObj, path) {
@@ -88,28 +88,33 @@
             splitStr = path.split('.'); // get the component parts of the path
             obj = startObj; // create a local start point reference to change
 
-            while (splitStr.length > 0) {
-                if (obj === null || obj === 'undefined') {
+            while (splitStr.length > 0 && typeof obj !== 'undefined') {
+                // if the current value is null then convert to undefined and exit loop as we cannot go deeper
+                if (obj === null) {
+                    obj = void(0);
                     return;
                 }
 
                 nextProp = splitStr.shift();
-                next = obj[nextProp];
+                next = obj[nextProp]; // get the next value so we can test it's type to see if we've reached an end
 
                 if (typeof next === 'undefined' || splitStr.length === 0) {
-                    return next;
+                    return next; // end of path
                 }
 
-                args = argumentsToArray(arguments, 2); // convert the arguments
-                obj = recurseValue.apply(null, [next].concat(args));
+                args = argumentsToArray(arguments, 2); // get any arguments passed
+                obj = recurseValue.apply(null, [next].concat(args)); // get the next value
             }
 
             return obj;
         };
 
         /**
-         *
-         * @returns {*}
+         * @name updateObj
+         * @description Updates the current value of 'obj' and return 'valueTester' to continue chaining or if we are at
+         * a value that cannot be dug into further then return the 'persist' function to allow chaining to continue
+         * without breaking
+         * @returns {Function} Either 'persist' or 'valueTester'
          */
         updateObj = function () {
             if (typeof current === 'undefined' || current === null) {
@@ -122,7 +127,7 @@
         /**
          * @name valueTester
          * @description Tries to get the value related to the property string passed
-         * @param val The property name string (or dot syntax string) we want to try and retrieve
+         * @param {String} val The property name string (or dot syntax string) we want to try and retrieve
          * @returns {*}
          */
         valueTester = function (val) {
@@ -137,7 +142,6 @@
 
                 return obj;
             }
-
 
             current = obj[val];
 
@@ -157,17 +161,44 @@
             return updateObj(); // update the 'obj' variable
         };
 
+        /**
+         * @name val
+         * @memberOf valueTester
+         * @description Returns the property without attempting any recursion - useful when there is part of the path
+         * that you want as is; for example a function with properties or Class with static methods
+         * @param {String} val
+         * @returns {Function}
+         */
         valueTester.val = function (val) {
             current = obj[val];
             return updateObj();
         };
 
+        /**
+         * @name rec
+         * @memberOf valueTester
+         * @description Tries to perform recursion on the property - Useful where that last property is a function that
+         * needs to use recursion to get the ultimately desired value
+         * @param {String} val
+         * @param {*} ...rest optional any other arguments that you wish to use when calling the function; they will not
+         * be used beyond the initial call so not used on any functions called recursively
+         * @returns {Function}
+         */
         valueTester.rec = function (val) {
             var args = argumentsToArray(arguments, 1);
             current = recurseValue.apply(null, [obj[val]].concat(args));
             return updateObj();
         };
 
+        /**
+         * @name run
+         * @memberOf valueTester
+         * @description Runs or calls the function only once - useful if the function is part of a path and you do not
+         * need to perform recursion on it but it needs to be called once to get the value
+         * @param {String} val
+         * @param {*} ...rest optional any other arguments that you wish to use when calling the function
+         * @returns {Function}
+         */
         valueTester.run = function (val) {
             var args;
 
@@ -183,19 +214,19 @@
 
         if (typeof base === 'string') {
             return getFromString(root, base); // no start object passed in so use the root (i.e. window in a browser)
-        } else if (typeof base === 'object' && typeof path === 'string') {
+        } else if (typeof path === 'string') {
             return getFromString(base, path); // a dot syntax path also passed so just use that
         }
 
-        obj = base; // set the object ready for chaining
+        obj = current = base; // set the object ready for chaining
 
         return valueTester;
     }
 
     if (typeof exports === 'object') {
-        exports.getme = getme;
+        exports.getme = getme; // export for node
     } else {
-        root.getme = getme;
+        root.getme = getme; // create 'root' reference
     }
 
     return getme;

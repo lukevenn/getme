@@ -72,6 +72,12 @@ describe('getme', function () {
         testObject = void(0);
     });
 
+    it('should return undefined when the base object is undefined', function () {
+        var undefinedBase;
+        expect(getme(undefinedBase, 'a.made.up.path')).toBeUndefined();
+        expect(getme(undefinedBase)()).toBeUndefined();
+    });
+
     it('should return an object from a global object when passed a string', function () {
         window.testObject = testObject;
         expect(getme('testObject.uk')).toBe(testObject.uk);
