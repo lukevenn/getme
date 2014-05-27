@@ -65,7 +65,7 @@ method will be returned. The assumption is that any methods listed in the path a
 arguments and can be called freely.
 
 If any of the methods in the path do require arguments to be passed in then you should use the 'chained' calls version
-- see below API for examples.
+\- see below API for examples.
 
 If the last item in the list is a 'getter' and you want to be returned that value then, again, the 'chained' version can
 help. There are 'run' or 'rec' methods that allow this - see below for API and examples.
@@ -77,7 +77,6 @@ that requires arguments then an error could be thrown; 'getme' is not responsibl
 doesn't.
 
 ##'getme' API
----
 
 The below methods are only available when using the 'chained' version.
 
@@ -130,7 +129,7 @@ Runs, or calls, a function only once with no recursion. Can be called at any poi
 __Parameters__:
 
     val {String} The method name you wish to call (if a property name is entered then the value of this will be returned)
-    ...rest {\*} Any additional arguments you wish to pass into the method when it is called
+    ...rest {*} Any additional arguments you wish to pass into the method when it is called
 
 __Example__:
 
@@ -179,7 +178,7 @@ this is more for the case where the method is that last property in the list.
 __Parameters__:
 
     val {String} The method name you wish to call (if a property name is entered then the value of this will be returned)
-    ...rest {\*} Any additional arguments you wish to pass into the method when it is called
+    ...rest {*} Any additional arguments you wish to pass into the method when it is called
 
 __Example__:
 
