@@ -27,13 +27,16 @@
     'use strict';
 
     function getme(base, path) {
-        var obj, current, previous, valueTester, getFromString, updateObj;
+        var obj,
+            current,
+            valueTester,
+            memo;
 
         /**
          * @name argumentsToArray
          * @description Converts and arguments object into an array - removing any leading values if required
          * @param {Object} args An arguments object
-         * @param {Number} fromIndex Index to convert from
+         * @param {Number} [fromIndex] Index to convert from
          * @returns {Array}
          */
         function argumentsToArray(args, fromIndex) {
@@ -43,37 +46,124 @@
         /**
          * @name recurseValue
          * @description Recursively calls methods until it is not return a method
-         * @param {*} val The value to try and recurse
+         * @param {*} prop The value to try and recurse
          * @returns {*}
          */
-        function recurseValue(val) {
+        function recurseValue(prop) {
             var args;
-            if (typeof val === 'function') {
+            if (typeof prop === 'function') {
                 args = argumentsToArray(arguments, 1);
-                return recurseValue(val.apply(obj, args));
+                return recurseValue(prop.apply(obj, args));
             }
-            return val;
+            return prop;
         }
 
         /**
          * @name persist
-         * @description Persists the last value if null or undefined so we can continue chaining without throwing errors
-         * @param {String} val The property name value so that we can detect when the value should be returned
-         * @returns {*}
+         * @description Sets 'current' to undefined as the have reached a point where the is no value
+         * @param {String} propStr The property name value so that we can detect when the value should be returned
+         * @returns {*} 'persist' function or the value of 'current'
          */
-        function persist(val) {
-            if (val) {
-                if (current === null) {
-                    // if the current value is null and they have tried to get another value then convert it to undefined
-                    current = void 0;
-                }
-                return persist; // return itself to continue chaining
+        function persist(propStr) {
+            if (current === null) {
+                current = void(0); // if they get to this point then they've hit a dead end
             }
-            return current; // return the current value (either null or undefined)
+
+            // return 'persist' function to continue chain if they added a property or return the value
+            return propStr ? persist : current;
         }
 
         // add the run, rec and val methods so that they can still be used in the chain without causing an error
         persist.run = persist.rec = persist.val = persist;
+
+        /**
+         * @name runStored
+         * @description runs the stored function with the arguments it was passed
+         */
+        function runStored () {
+            if (memo.func && memo.args) {
+                memo.func.apply(null, memo.args);
+            }
+        }
+
+        /**
+         * @name valueTester
+         * @description Tries to get the value related to the property string passed
+         * @param {String} propStr The property name string (or dot syntax string) we want to try and retrieve
+         * @returns {*}
+         */
+        function test (propStr) {
+            var args;
+            current = obj[propStr];
+
+            args = memo.args.slice(1); // get the arguments from the memory (memo) object
+
+            if (args.length === 0) {
+                // get the value - the last value of a dot syntax string or a single value will be passed as it
+                current = getFromString(obj, propStr);
+            }
+            if (typeof current === 'function') {
+                // recurse the value only if a function as all other recursion should have been performed by 'getFromString'
+                current = recurseValue.apply(null, [current].concat(args));
+            }
+        }
+
+        /**
+         * @name val
+         * @description Returns the property without attempting any recursion - useful when there is part of the path
+         * that you want as is; for example a function with properties or Class with static methods
+         * @param {String} propStr
+         */
+        function val (propStr) {
+            current = obj[propStr];
+        }
+
+        /**
+         * @name rec
+         * @description Tries to perform recursion on the property - Useful where that last property is a function that
+         * needs to use recursion to get the ultimately desired value
+         * @param {String} propStr
+         * @param {...*} [rest] Any other arguments that you wish to use when calling the function; they will not
+         * be used beyond the initial call so not used on any functions called recursively (if you wish to do so use run
+         * instead)
+         */
+        function rec (propStr, rest) {
+            var args = memo.args.slice(1); // get the arguments from the memory (memo) object
+            current = recurseValue.apply(null, [obj[propStr]].concat(args));
+        }
+
+        /**
+         * @name run
+         * @description Runs or calls the function only once - useful if the function is part of a path and you do not
+         * need to perform recursion on it but it needs to be called once to get the value
+         * @param {String} propStr
+         * @param {...*} [rest] Any other arguments that you wish to use when calling the function
+         */
+        function run (propStr, rest) {
+            var args;
+
+            if (typeof obj[propStr] === 'function') {
+                args = memo.args.slice(1); // get the arguments from the memory (memo) object
+                current = obj[propStr].apply(obj, args);
+            } else {
+                current = obj[propStr];
+            }
+        }
+
+        /**
+         * @name updateObj
+         * @description Updates the current value of 'obj' and return 'valueTester' to continue chaining or if we are at
+         * a value that cannot be dug into further then return the 'persist' function to allow chaining to continue
+         * without breaking
+         * @returns {Function} Either 'persist' or 'valueTester'
+         */
+        function updateObj () {
+            if (typeof current === 'undefined' || current === null) {
+                return persist;
+            }
+            obj = current;
+            return valueTester;
+        }
 
         /**
          * @name getFromString
@@ -82,7 +172,7 @@
          * @param {String} path A dot syntax string to a property
          * @returns {*}
          */
-        getFromString = function (startObj, path) {
+        function getFromString (startObj, path) {
             var splitStr, nextProp, next, args;
 
             splitStr = path.split('.'); // get the component parts of the path
@@ -107,58 +197,30 @@
             }
 
             return obj;
-        };
+        }
 
-        /**
-         * @name updateObj
-         * @description Updates the current value of 'obj' and return 'valueTester' to continue chaining or if we are at
-         * a value that cannot be dug into further then return the 'persist' function to allow chaining to continue
-         * without breaking
-         * @returns {Function} Either 'persist' or 'valueTester'
-         */
-        updateObj = function () {
-            if (typeof current === 'undefined' || current === null) {
-                return persist;
-            }
-            obj = current;
-            return valueTester;
-        };
+        memo = {};
 
         /**
          * @name valueTester
          * @description Tries to get the value related to the property string passed
-         * @param {String} val The property name string (or dot syntax string) we want to try and retrieve
+         * @param {String} propStr The property name string (or dot syntax string) we want to try and retrieve
          * @returns {*}
          */
-        valueTester = function (val) {
-            // TODO - change it so that the chain is always one behind so that unnecessary recursion is avoided
-
-            var args;
-            if (typeof val === 'undefined') {
-                // if the last property in the chain was a function then return this rather than it's recursed value
-                if (typeof previous === 'function') {
-                    return previous;
+        valueTester = function (propStr) {
+            if (typeof propStr === 'undefined') {
+                if (memo.func !== test) {
+                    runStored();
+                    updateObj();
+                } else {
+                    obj = getFromString(obj, memo.args[0]);
                 }
-
                 return obj;
             }
-
-            current = obj[val];
-
-            args = argumentsToArray(arguments, 1); // convert the arguments
-
-            if (args.length === 0) {
-                // get the value - the last value of a dot syntax string or a single value will be passed as it
-                current = getFromString(obj, val);
-            }
-            // store the value so that if it is a function we can return it if it turns out to be the last in the chain
-            previous = current;
-            if (typeof current === 'function') {
-                // recurse the value only if a function as all other recursion should have been performed by 'getFromString'
-                current = recurseValue.apply(null, [current].concat(args));
-            }
-
-            return updateObj(); // update the 'obj' variable
+            runStored();
+            memo.func = test;
+            memo.args = argumentsToArray(arguments);
+            return updateObj();
         };
 
         /**
@@ -166,11 +228,13 @@
          * @memberOf valueTester
          * @description Returns the property without attempting any recursion - useful when there is part of the path
          * that you want as is; for example a function with properties or Class with static methods
-         * @param {String} val
+         * @param {String} propStr
          * @returns {Function}
          */
-        valueTester.val = function (val) {
-            current = obj[val];
+        valueTester.val = function (propStr) {
+            runStored();
+            memo.func = val;
+            memo.args = argumentsToArray(arguments);
             return updateObj();
         };
 
@@ -179,14 +243,15 @@
          * @memberOf valueTester
          * @description Tries to perform recursion on the property - Useful where that last property is a function that
          * needs to use recursion to get the ultimately desired value
-         * @param {String} val
-         * @param {*} ...rest optional any other arguments that you wish to use when calling the function; they will not
+         * @param {String} propStr
+         * @param {...*} [rest] optional any other arguments that you wish to use when calling the function; they will not
          * be used beyond the initial call so not used on any functions called recursively
          * @returns {Function}
          */
-        valueTester.rec = function (val) {
-            var args = argumentsToArray(arguments, 1);
-            current = recurseValue.apply(null, [obj[val]].concat(args));
+        valueTester.rec = function (propStr, rest) {
+            runStored();
+            memo.func = rec;
+            memo.args = argumentsToArray(arguments);
             return updateObj();
         };
 
@@ -195,20 +260,14 @@
          * @memberOf valueTester
          * @description Runs or calls the function only once - useful if the function is part of a path and you do not
          * need to perform recursion on it but it needs to be called once to get the value
-         * @param {String} val
-         * @param {*} ...rest optional any other arguments that you wish to use when calling the function
+         * @param {String} propStr
+         * @param {...*} [rest] optional any other arguments that you wish to use when calling the function
          * @returns {Function}
          */
-        valueTester.run = function (val) {
-            var args;
-
-            if (typeof obj[val] === 'function') {
-                args = argumentsToArray(arguments, 1);
-                current = obj[val].apply(obj, args);
-            } else {
-                current = obj[val];
-            }
-
+        valueTester.run = function (propStr, rest) {
+            runStored();
+            memo.func = run;
+            memo.args = argumentsToArray(arguments);
             return updateObj();
         };
 
@@ -229,5 +288,5 @@
         root.getme = getme; // create 'root' reference
     }
 
-    return getme;
+    return getme; // for AMD
 }(this));

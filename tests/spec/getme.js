@@ -60,7 +60,7 @@ describe('getme', function () {
 
     ukArea = 36000;
     londonArea = 1200;
-    countryType = 'country'
+    countryType = 'country';
     cityType = 'city';
 
 
@@ -73,7 +73,7 @@ describe('getme', function () {
     });
 
     it('should return undefined when the base object is undefined', function () {
-        var undefinedBase;
+        var undefinedBase = void(0);
         expect(getme(undefinedBase, 'a.made.up.path')).toBeUndefined();
         expect(getme(undefinedBase)()).toBeUndefined();
     });
