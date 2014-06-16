@@ -1,0 +1,11 @@
+{
+  "name": "getme",
+  "version": "0.0.1",
+  "main": "getme.js",
+  "devDependencies": {
+    "gulp": "^3.6.2",
+    "gulp-jslint": "^0.1.0",
+    "gulp-uglify": "^0.3.0",
+    "jslint": "^0.5.2"
+  }
+}

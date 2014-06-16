@@ -167,6 +167,9 @@
       currentWindowOnload();
     }
     htmlReporter.initialize();
+      if (typeof define === 'function' && define.amd) {
+          return; //dont'start the tests automatically
+      }
     env.execute();
   };
 

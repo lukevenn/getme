@@ -22,8 +22,21 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-;
-(function (root) {
+
+(function (factory) {
+    'use strict';
+
+    if (typeof exports === 'object') {
+        exports.getme = factory; // export for node
+    } else if (typeof define === 'function' && define.amd) {
+        // allow AMD use - no module name passed to help avoid conflicts
+        define(function () {
+            return factory(window);
+        });
+    } else {
+        window.getme = factory(window); // create 'root' reference
+    }
+}(function (root) {
     'use strict';
 
     function getme(base, path) {
@@ -66,7 +79,7 @@
          */
         function persist(propStr) {
             if (current === null) {
-                current = void(0); // if they get to this point then they've hit a dead end
+                current = undefined; // if they get to this point then they've hit a dead end
             }
 
             // return 'persist' function to continue chain if they added a property or return the value
@@ -80,10 +93,60 @@
          * @name runStored
          * @description runs the stored function with the arguments it was passed
          */
-        function runStored () {
+        function runStored() {
             if (memo.func && memo.args) {
                 memo.func.apply(null, memo.args);
             }
+        }
+
+
+        /**
+         * @name updateObj
+         * @description Updates the current value of 'obj' and return 'valueTester' to continue chaining or if we are at
+         * a value that cannot be dug into further then return the 'persist' function to allow chaining to continue
+         * without breaking
+         * @returns {Function} Either 'persist' or 'valueTester'
+         */
+        function updateObj() {
+            if (current === undefined || current === null) {
+                return persist;
+            }
+            obj = current;
+            return valueTester;
+        }
+
+        /**
+         * @name getFromString
+         * @description returns a value or undefined from a dot syntax string
+         * @param {*} startObj The object to use as the root
+         * @param {String} path A dot syntax string to a property
+         * @returns {*}
+         */
+        function getFromString(startObj, path) {
+            var splitStr, nextProp, next, args;
+
+            splitStr = path.split('.'); // get the component parts of the path
+            obj = startObj; // create a local start point reference to change
+
+            while (splitStr.length > 0 && obj !== undefined) {
+                // if the current value is null then convert to undefined and exit loop as we cannot go deeper
+                if (obj === null) {
+                    obj = undefined;
+                    return;
+                }
+
+                nextProp = splitStr.shift();
+                next = obj[nextProp]; // get the next value so we can test it's type to see if we've reached an end
+
+                if (next === undefined || splitStr.length === 0) {
+                    return next; // end of path
+                }
+
+                args = argumentsToArray(arguments, 2); // get any arguments passed
+                obj = recurseValue.apply(null, [next].concat(args)); // get the next value
+            }
+
+            return obj;
         }
 
         /**
@@ -92,7 +155,7 @@
          * @param {String} propStr The property name string (or dot syntax string) we want to try and retrieve
          * @returns {*}
          */
-        function test (propStr) {
+        function test(propStr) {
             var args;
             current = obj[propStr];
 
@@ -114,7 +177,7 @@
          * that you want as is; for example a function with properties or Class with static methods
          * @param {String} propStr
          */
-        function val (propStr) {
+        function val(propStr) {
             current = obj[propStr];
         }
 
@@ -127,7 +190,7 @@
          * be used beyond the initial call so not used on any functions called recursively (if you wish to do so use run
          * instead)
          */
-        function rec (propStr, rest) {
+        function rec(propStr, rest) {
             var args = memo.args.slice(1); // get the arguments from the memory (memo) object
             current = recurseValue.apply(null, [obj[propStr]].concat(args));
         }
@@ -139,7 +202,7 @@
          * @param {String} propStr
          * @param {...*} [rest] Any other arguments that you wish to use when calling the function
          */
-        function run (propStr, rest) {
+        function run(propStr, rest) {
             var args;
 
             if (typeof obj[propStr] === 'function') {
@@ -148,55 +211,6 @@
             } else {
                 current = obj[propStr];
             }
-        }
-
-        /**
-         * @name updateObj
-         * @description Updates the current value of 'obj' and return 'valueTester' to continue chaining or if we are at
-         * a value that cannot be dug into further then return the 'persist' function to allow chaining to continue
-         * without breaking
-         * @returns {Function} Either 'persist' or 'valueTester'
-         */
-        function updateObj () {
-            if (typeof current === 'undefined' || current === null) {
-                return persist;
-            }
-            obj = current;
-            return valueTester;
-        }
-
-        /**
-         * @name getFromString
-         * @description returns a value or undefined from a dot syntax string
-         * @param {*} startObj The object to use as the root
-         * @param {String} path A dot syntax string to a property
-         * @returns {*}
-         */
-        function getFromString (startObj, path) {
-            var splitStr, nextProp, next, args;
-
-            splitStr = path.split('.'); // get the component parts of the path
-            obj = startObj; // create a local start point reference to change
-
-            while (splitStr.length > 0 && typeof obj !== 'undefined') {
-                // if the current value is null then convert to undefined and exit loop as we cannot go deeper
-                if (obj === null) {
-                    obj = void(0);
-                    return;
-                }
-
-                nextProp = splitStr.shift();
-                next = obj[nextProp]; // get the next value so we can test it's type to see if we've reached an end
-
-                if (typeof next === 'undefined' || splitStr.length === 0) {
-                    return next; // end of path
-                }
-
-                args = argumentsToArray(arguments, 2); // get any arguments passed
-                obj = recurseValue.apply(null, [next].concat(args)); // get the next value
-            }
-
-            return obj;
         }
 
         memo = {};
@@ -208,7 +222,7 @@
          * @returns {*}
          */
         valueTester = function (propStr) {
-            if (typeof propStr === 'undefined') {
+            if (propStr === undefined) {
                 if (memo.func !== test) {
                     runStored();
                     updateObj();
@@ -273,7 +287,8 @@
 
         if (typeof base === 'string') {
             return getFromString(root, base); // no start object passed in so use the root (i.e. window in a browser)
-        } else if (typeof path === 'string') {
+        }
+        if (typeof path === 'string') {
             return getFromString(base, path); // a dot syntax path also passed so just use that
         }
 
@@ -282,11 +297,5 @@
         return valueTester;
     }
 
-    if (typeof exports === 'object') {
-        exports.getme = getme; // export for node
-    } else {
-        root.getme = getme; // create 'root' reference
-    }
-
-    return getme; // for AMD
-}(this));
+    return getme;
+}));
