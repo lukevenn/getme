@@ -23,7 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-(function (factory) {
+(function (rootScope, factory) {
     'use strict';
 
     if (typeof exports === 'object') {
@@ -31,12 +31,12 @@
     } else if (typeof define === 'function' && define.amd) {
         // allow AMD use - no module name passed to help avoid conflicts
         define(function () {
-            return factory(window);
+            return factory(rootScope);
         });
     } else {
-        window.getme = factory(window); // create 'root' reference
+        rootScope.getme = factory(rootScope); // create 'root' reference
     }
-}(function (root) {
+}(this, function (root) {
     'use strict';
 
     function getme(base, path) {
