@@ -245,6 +245,7 @@
             expect(getme(testObject)('uk.type.length')()).toBe(countryType.length);
             expect(getme(testObject)('uk')('type').run('split', '')()).toEqual(countryType.split(''));
             expect(getme(testObject)('uk.type').run('split', '')()).toEqual(countryType.split(''));
+            expect(getme(testObject).run('func').run('replace', 'func', 'function')()).toBe('function');
 
             // arrays
             expect(getme(testObject)('uk')('cityNames')('length')()).toBe(testObject.uk.cityNames.length);
@@ -262,6 +263,7 @@
         });
 
         it('should not throw an error if the chain has already hit an undefined before calling run', function () {
+            expect(getme(null).run('replace', 'hello', 'world')()).toBeUndefined();
             expect(getme(testObject)('uk')('noneExistant').run('getSize')()).toBeUndefined();
             expect(getme(testObject)('uk.noneExistant').run('getSize')()).toBeUndefined();
             expect(getme(testObject)('uk')('london')('noneExistant').run('getSize')()).toBeUndefined();
