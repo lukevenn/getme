@@ -108,10 +108,10 @@
          * @returns {Function} Either 'persist' or 'valueTester'
          */
         function updateObj() {
+            obj = current;
             if (current === undefined || current === null) {
                 return persist;
             }
-            obj = current;
             return valueTester;
         }
 

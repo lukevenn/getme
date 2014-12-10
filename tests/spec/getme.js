@@ -284,5 +284,23 @@
             expect(getme(testObject)('uk.london.noneExistant').rec('getSize')()).toBeUndefined();
         });
 
+        it('should return an undefined if the chain ends in an undefined in a run call', function () {
+            expect(getme(testObject)('uk').run('noneExistant')()).toBeUndefined();
+            expect(getme(testObject)('uk')('london').run('noneExistant')()).toBeUndefined();
+            expect(getme(testObject)('uk.london').run('noneExistant')()).toBeUndefined();
+        });
+
+        it('should return an undefined if the chain ends in an undefined in a val call', function () {
+            expect(getme(testObject)('uk').val('noneExistant')()).toBeUndefined();
+            expect(getme(testObject)('uk')('london').val('noneExistant')()).toBeUndefined();
+            expect(getme(testObject)('uk.london').val('noneExistant')()).toBeUndefined();
+        });
+
+        it('should return an undefined if the chain ends in an undefined in a rec call', function () {
+            expect(getme(testObject)('uk').rec('noneExistant')()).toBeUndefined();
+            expect(getme(testObject)('uk')('london').rec('noneExistant')()).toBeUndefined();
+            expect(getme(testObject)('uk.london').rec('noneExistant')()).toBeUndefined();
+        });
+
     });
 }));
