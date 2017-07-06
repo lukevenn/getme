@@ -1,4 +1,4 @@
-#getme
+# getme
 'getme' is a simple function that allows you to safely retrieve a value from an object path without having to worry
 about Reference Errors. To put it simply; if a value exits it gets it for you if not you get undefined.
 
@@ -8,7 +8,7 @@ It can be used in 3 different ways:
 2. Using a dot syntax string from a 'base' object starting point
 3. Passing property (or method) names into chained calls
 
-###1. Using a dot syntax string from a 'global' value
+### 1. Using a dot syntax string from a 'global' value
 
 When 'getme' is initialised a 'global' value is passed in (in the browser this will evaluate to window). Any strings
 that are passed in will then be evaluated from that point.
@@ -26,7 +26,7 @@ _Why?_
 The main reason for not eval(uating) the first item in the string is simply to avoid having access to the global 'eval'
 method. It is merely added for completeness sake.
 
-###2. Using a dot syntax string from a 'base' object starting point
+### 2. Using a dot syntax string from a 'base' object starting point
 
 The second way of using 'getme' allows you to pass in a starting point object that can be any object you like.
 
@@ -38,7 +38,7 @@ _Why?_
 
 This allows us to use the same simple dot syntax without having the limitation of only being able to use it on global paths.
 
-###3. Passing property values into 'chained' calls
+### 3. Passing property values into 'chained' calls
 
 The third way of using 'getme' is the more complicated but more powerful method. In this style each part of the path is
 put into separate function calls.
@@ -57,7 +57,7 @@ _Why?_
 
 The reason for using this method is that it allows us much more control in how we find the object as will be shown later.
 
-###An excursion into recursion - A brief note on how 'getme' handles 'getters' in paths (and methods generally)
+### An excursion into recursion - A brief note on how 'getme' handles 'getters' in paths (and methods generally)
 
 When 'getme' encounters a method in a path it will, by default, call that method recursively until it is no longer
 returned a function. The exception to this is where the last value listed is itself a method; in this instance the
@@ -80,7 +80,7 @@ doesn't.
 
 The below methods are only available when using the 'chained' version.
 
-###val
+### val
 __Usage__:
 
     val(String property)
@@ -117,7 +117,7 @@ __Example__:
     getme(startObj).val('MyClass')('constant')(); // returns 'iAmConstantAndUnchanging'
 
 
-###run
+### run
 __Usage__:
 
     run(String property [, ...rest])
@@ -165,7 +165,7 @@ then you are correct; but if the method doesn't exist then you will get an error
     getme(startObj)('aChildsMethod')('noneExistantMethod')()(); // throws error
 
 
-###rec
+### rec
 __Usage__:
 
     rec(String property [, ...rest])
